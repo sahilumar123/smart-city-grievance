@@ -1,0 +1,230 @@
+
+{% extends "base.html" %}
+
+{% block title %}Dashboard | CityPulse SIH{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <span class="badge rounded-pill text-bg-primary mb-2">
+            <i class="bi bi-buildings me-1"></i> SMART CITY PORTAL
+        </span>
+        <h2 class="fw-bold mb-1">Grievance Dashboard</h2>
+        <p class="text-secondary mb-0">
+            Report civic issues, track progress, and help improve your city.
+        </p>
+    </div>
+
+    <a href="{{ url_for('submit_grievance') }}" class="btn btn-primary btn-lg">
+        <i class="bi bi-plus-circle me-2"></i>Report New Issue
+    </a>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body p-3 p-md-4">
+        <h5 class="fw-bold mb-3">
+            <i class="bi bi-funnel me-2"></i>Find a Grievance
+        </h5>
+
+        <div class="row g-3">
+            <div class="col-md-5">
+                <label for="grievanceSearch" class="form-label">Search</label>
+                <input id="grievanceSearch" type="search" class="form-control"
+                       placeholder="Search title, description, or location...">
+            </div>
+
+            <div class="col-md-3">
+                <label for="categoryFilter" class="form-label">Category</label>
+                <select id="categoryFilter" class="form-select">
+                    <option value="">All categories</option>
+                    <option value="Pothole">Pothole</option>
+                    <option value="Streetlight">Streetlight Failure</option>
+                    <option value="Water Leakage">Water Leakage</option>
+                    <option value="Garbage Dump">Garbage / Sanitation</option>
+                </select>
+            </div>
+
+            <div class="col-md-3">
+                <label for="statusFilter" class="form-label">Status</label>
+                <select id="statusFilter" class="form-select">
+                    <option value="">All statuses</option>
+                    <option value="Pending">Pending</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Resolved">Resolved</option>
+                </select>
+            </div>
+
+            <div class="col-md-1 d-flex align-items-end">
+                <button type="button" id="resetFilters"
+                        class="btn btn-outline-secondary w-100"
+                        title="Reset filters" aria-label="Reset filters">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+    <h5 class="fw-bold mb-0">Reported Public Grievances</h5>
+    <span class="text-secondary small" id="visibleCount" aria-live="polite">
+        {{ grievances|length }} complaints
+    </span>
+</div>
+
+<div class="row" id="grievanceList">
+    {% for g in grievances %}
+    <div class="col-md-6 col-xl-4 mb-4 grievance-item"
+         data-title="{{ g.title|lower }}"
+         data-description="{{ g.description|lower }}"
+         data-location="{{ g.location|lower }}"
+         data-category="{{ g.category }}"
+         data-status="{{ g.status }}">
+
+        <div class="card h-100 shadow-sm overflow-hidden">
+            {% if g.image_file %}
+            <img src="{{ url_for('static', filename='uploads/' + g.image_file) }}"
+                 class="card-img-top"
+                 style="height: 190px; object-fit: cover;"
+                 alt="Evidence for grievance {{ g.id }}">
+            {% else %}
+            <div class="d-flex align-items-center justify-content-center bg-body-secondary"
+                 style="height: 95px;">
+                <i class="bi bi-cone-striped text-secondary"
+                   style="font-size: 2.5rem;"></i>
+            </div>
+            {% endif %}
+
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                    <span class="badge text-bg-light border">
+                        {{ g.category }}
+                    </span>
+                    <span class="small text-secondary">
+                        #{{ g.id }}
+                    </span>
+                </div>
+
+                <h5 class="card-title fw-bold">{{ g.title }}</h5>
+
+                <div class="small text-secondary mb-3">
+                    <div class="mb-1">
+                        <i class="bi bi-geo-alt me-1"></i>{{ g.location }}
+                    </div>
+                    <div>
+                        <i class="bi bi-calendar3 me-1"></i>
+                        {{ g.date_posted.strftime('%d %b %Y') }}
+                    </div>
+                </div>
+
+                <p class="card-text">{{ g.description }}</p>
+            </div>
+
+            <div class="card-footer bg-white p-3">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                    <span class="small fw-semibold text-secondary">CURRENT STATUS</span>
+                    <span class="badge
+                        {% if g.status == 'Resolved' %}text-bg-success
+                        {% elif g.status == 'In Progress' %}text-bg-warning
+                        {% else %}text-bg-danger{% endif %}">
+                        {{ g.status }}
+                    </span>
+                </div>
+
+                <form action="{{ url_for('update_status', id=g.id) }}"
+                      method="POST" class="d-flex gap-2">
+                    <label for="status-{{ g.id }}" class="visually-hidden">
+                        Update status
+                    </label>
+                    <select id="status-{{ g.id }}" name="status"
+                            class="form-select form-select-sm" required>
+                        <option value="" disabled selected>Change status...</option>
+                        <option value="Pending">Pending</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Resolved">Resolved</option>
+                    </select>
+                    <button type="submit" class="btn btn-sm btn-outline-primary">
+                        Update
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    <div class="col-12 {% if grievances %}d-none{% endif %}" id="emptyState">
+        <div class="card text-center p-5 shadow-sm">
+            <i class="bi bi-clipboard2-check text-secondary mb-3"
+               style="font-size: 3rem;"></i>
+            <h5 class="fw-bold">No grievances found</h5>
+            <p class="text-secondary mb-3" id="emptyMessage">
+                There are no complaints to display yet.
+            </p>
+            <div>
+                <a href="{{ url_for('submit_grievance') }}"
+                   class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-1"></i>Report an Issue
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const search = document.getElementById("grievanceSearch");
+    const category = document.getElementById("categoryFilter");
+    const status = document.getElementById("statusFilter");
+    const reset = document.getElementById("resetFilters");
+    const items = Array.from(document.querySelectorAll(".grievance-item"));
+    const count = document.getElementById("visibleCount");
+    const emptyState = document.getElementById("emptyState");
+    const emptyMessage = document.getElementById("emptyMessage");
+
+    function filterGrievances() {
+        const query = search.value.trim().toLowerCase();
+        const selectedCategory = category.value;
+        const selectedStatus = status.value;
+        let visible = 0;
+
+        items.forEach(function (item) {
+            const text = [
+                item.dataset.title,
+                item.dataset.description,
+                item.dataset.location
+            ].join(" ");
+
+            const matches =
+                text.includes(query) &&
+                (!selectedCategory || item.dataset.category === selectedCategory) &&
+                (!selectedStatus || item.dataset.status === selectedStatus);
+
+            item.classList.toggle("d-none", !matches);
+            if (matches) visible++;
+        });
+
+        count.textContent = visible + (visible === 1 ? " complaint" : " complaints");
+        emptyState.classList.toggle("d-none", visible !== 0);
+
+        if (items.length === 0) {
+            emptyMessage.textContent = "No complaints have been submitted yet.";
+        } else {
+            emptyMessage.textContent = "Try changing your search or filters.";
+        }
+    }
+
+    search.addEventListener("input", filterGrievances);
+    category.addEventListener("change", filterGrievances);
+    status.addEventListener("change", filterGrievances);
+
+    reset.addEventListener("click", function () {
+        search.value = "";
+        category.value = "";
+        status.value = "";
+        filterGrievances();
+    });
+
+    filterGrievances();
+});
+</script>
+{% endblock %}

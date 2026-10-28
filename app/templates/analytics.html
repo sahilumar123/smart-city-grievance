@@ -1,0 +1,261 @@
+
+{% extends "base.html" %}
+
+{% block title %}Analytics | CityPulse SIH{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <span class="badge rounded-pill text-bg-primary mb-2">
+            <i class="bi bi-bar-chart-line me-1"></i>CITY INSIGHTS
+        </span>
+        <h2 class="fw-bold mb-1">Analytics Dashboard</h2>
+        <p class="text-secondary mb-0">
+            Understand complaint volume, resolution progress, and affected zones.
+        </p>
+    </div>
+
+    <button class="btn btn-outline-primary" onclick="window.location.reload()">
+        <i class="bi bi-arrow-clockwise me-1"></i>Refresh Data
+    </button>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm border-0">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-secondary fw-semibold">Total Complaints</span>
+                    <span class="rounded-3 bg-primary-subtle text-primary p-2">
+                        <i class="bi bi-clipboard-data fs-5"></i>
+                    </span>
+                </div>
+                <h2 class="fw-bold mt-3 mb-1">{{ insights.total_complaints }}</h2>
+                <small class="text-secondary">All recorded grievances</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm border-0">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-secondary fw-semibold">Resolved Complaints</span>
+                    <span class="rounded-3 bg-success-subtle text-success p-2">
+                        <i class="bi bi-check-circle fs-5"></i>
+                    </span>
+                </div>
+                <h2 class="fw-bold mt-3 mb-1">{{ insights.resolved_count }}</h2>
+                <small class="text-secondary">Marked as resolved</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm border-0">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-secondary fw-semibold">Resolution Rate</span>
+                    <span class="rounded-3 bg-info-subtle text-info p-2">
+                        <i class="bi bi-percent fs-5"></i>
+                    </span>
+                </div>
+                <h2 class="fw-bold mt-3 mb-1">{{ insights.resolution_rate }}%</h2>
+                <small class="text-secondary">Resolved out of all complaints</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-1">Complaints by Status</h5>
+                <p class="small text-secondary mb-3">
+                    Track the current progress of reported issues.
+                </p>
+                <div style="height: 300px; position: relative;">
+                    <canvas id="statusChart"
+                            role="img"
+                            aria-label="Doughnut chart of complaints by status">
+                        Complaints grouped by status.
+                    </canvas>
+                </div>
+                <p id="statusEmpty" class="small text-secondary text-center d-none">
+                    No complaint data available yet.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-1">Complaints by Category</h5>
+                <p class="small text-secondary mb-3">
+                    Identify the most frequently reported civic problems.
+                </p>
+                <div style="height: 300px; position: relative;">
+                    <canvas id="categoryChart"
+                            role="img"
+                            aria-label="Bar chart of complaints by category">
+                        Complaints grouped by category.
+                    </canvas>
+                </div>
+                <p id="categoryEmpty" class="small text-secondary text-center d-none">
+                    No complaint data available yet.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-1">Complaints by Zone / Location</h5>
+                <p class="small text-secondary mb-3">
+                    Compare reported issues across different locations.
+                </p>
+                <div style="height: 350px; position: relative;">
+                    <canvas id="zoneChart"
+                            role="img"
+                            aria-label="Bar chart of complaints by location">
+                        Complaints grouped by location.
+                    </canvas>
+                </div>
+                <p id="zoneEmpty" class="small text-secondary text-center d-none">
+                    No location data available yet.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const total = Number({{ insights.total_complaints | tojson }});
+
+    const statusLabels = {{ insights.status_breakdown.keys() | list | tojson }};
+    const statusValues = {{ insights.status_breakdown.values() | list | tojson }};
+
+    const categoryData = {{ insights.category_breakdown | tojson }};
+    const zoneData = {{ insights.zone_breakdown | tojson }};
+
+    function showEmptyIfNeeded(canvasId, messageId, labels, values) {
+        const hasData = labels.length > 0 &&
+            values.some(value => Number(value) > 0);
+
+        if (!hasData) {
+            document.getElementById(canvasId).classList.add("d-none");
+            document.getElementById(messageId).classList.remove("d-none");
+        }
+        return hasData;
+    }
+
+    if (typeof Chart === "undefined") {
+        document.querySelectorAll("canvas").forEach(canvas => {
+            canvas.classList.add("d-none");
+        });
+        document.querySelectorAll('[id$="Empty"]').forEach(message => {
+            message.classList.remove("d-none");
+            message.textContent =
+                "Charts could not load. Check your internet connection and refresh.";
+        });
+        return;
+    }
+
+    Chart.defaults.font.family = "'Segoe UI', Arial, sans-serif";
+    Chart.defaults.color = "#64748b";
+
+    if (total > 0 &&
+        showEmptyIfNeeded("statusChart", "statusEmpty", statusLabels, statusValues)) {
+        new Chart(document.getElementById("statusChart"), {
+            type: "doughnut",
+            data: {
+                labels: statusLabels,
+                datasets: [{
+                    data: statusValues,
+                    backgroundColor: ["#f59e0b", "#3b82f6", "#10b981"],
+                    borderWidth: 2,
+                    borderColor: "#ffffff"
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: "bottom" }
+                }
+            }
+        });
+    } else if (total === 0) {
+        document.getElementById("statusChart").classList.add("d-none");
+        document.getElementById("statusEmpty").classList.remove("d-none");
+    }
+
+    const categoryLabels = Object.keys(categoryData);
+    const categoryValues = Object.values(categoryData);
+
+    if (showEmptyIfNeeded(
+        "categoryChart", "categoryEmpty", categoryLabels, categoryValues
+    )) {
+        new Chart(document.getElementById("categoryChart"), {
+            type: "bar",
+            data: {
+                labels: categoryLabels,
+                datasets: [{
+                    label: "Complaints",
+                    data: categoryValues,
+                    backgroundColor: "#3b82f6",
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                indexAxis: "y",
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: { precision: 0 }
+                    }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+
+    const zoneLabels = Object.keys(zoneData);
+    const zoneValues = Object.values(zoneData);
+
+    if (showEmptyIfNeeded("zoneChart", "zoneEmpty", zoneLabels, zoneValues)) {
+        new Chart(document.getElementById("zoneChart"), {
+            type: "bar",
+            data: {
+                labels: zoneLabels,
+                datasets: [{
+                    label: "Complaints",
+                    data: zoneValues,
+                    backgroundColor: "#18a999",
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { precision: 0 }
+                    }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

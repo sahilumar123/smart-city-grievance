@@ -1,0 +1,243 @@
+
+{% extends "base.html" %}
+
+{% block title %}Report an Issue | CityPulse SIH{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8 col-xl-7">
+
+        <div class="mb-4">
+            <a href="{{ url_for('index') }}"
+               class="text-decoration-none text-secondary small">
+                <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
+            </a>
+
+            <div class="mt-3">
+                <span class="badge rounded-pill text-bg-primary mb-2">
+                    <i class="bi bi-megaphone me-1"></i>CITIZEN REPORTING
+                </span>
+                <h2 class="fw-bold mb-2">Report a Civic Issue</h2>
+                <p class="text-secondary mb-0">
+                    Help improve your city by providing accurate details
+                    about the problem.
+                </p>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body p-4 p-md-5">
+
+                <div class="d-flex align-items-center gap-3 mb-4">
+                    <div class="rounded-3 d-flex align-items-center justify-content-center
+                                bg-primary-subtle text-primary"
+                         style="width: 52px; height: 52px;">
+                        <i class="bi bi-clipboard2-plus fs-3"></i>
+                    </div>
+                    <div>
+                        <h4 class="fw-bold mb-1">Grievance Details</h4>
+                        <p class="text-secondary small mb-0">
+                            Fields marked * are required.
+                        </p>
+                    </div>
+                </div>
+
+                <form id="grievanceForm"
+                      method="POST"
+                      enctype="multipart/form-data">
+
+                    <div class="mb-4">
+                        <label for="title" class="form-label fw-semibold">
+                            Issue Title <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" id="title" name="title"
+                               class="form-control" required
+                               minlength="5" maxlength="100"
+                               placeholder="e.g., Large pothole near Main Market"
+                               aria-describedby="titleHelp titleCount">
+                        <div class="d-flex justify-content-between mt-1">
+                            <small id="titleHelp" class="text-secondary">
+                                Write a short, clear heading.
+                            </small>
+                            <small id="titleCount" class="text-secondary">0/100</small>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="category" class="form-label fw-semibold">
+                            Issue Category <span class="text-danger">*</span>
+                        </label>
+                        <select id="category" name="category"
+                                class="form-select" required>
+                            <option value="" selected disabled>Select a category</option>
+                            <option value="Pothole">Road Damage / Pothole</option>
+                            <option value="Streetlight">Streetlight Failure</option>
+                            <option value="Water Leakage">Water Leakage</option>
+                            <option value="Garbage Dump">Garbage / Sanitation</option>
+                        </select>
+                        <div class="form-text">
+                            Choose the category that best describes the problem.
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="location" class="form-label fw-semibold">
+                            Zone / Location <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light">
+                                <i class="bi bi-geo-alt"></i>
+                            </span>
+                            <input type="text" id="location" name="location"
+                                   class="form-control" required
+                                   minlength="2" maxlength="100"
+                                   placeholder="e.g., Zone A, Sector 4">
+                        </div>
+                        <div class="form-text">
+                            Include a locality, street, sector, or nearby landmark.
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="description" class="form-label fw-semibold">
+                            Description <span class="text-danger">*</span>
+                        </label>
+                        <textarea id="description" name="description"
+                                  class="form-control" rows="5"
+                                  required minlength="10" maxlength="2000"
+                                  placeholder="Describe the issue, its exact location, and how it affects residents."
+                                  aria-describedby="descriptionHelp descriptionCount"></textarea>
+                        <div class="d-flex justify-content-between mt-1">
+                            <small id="descriptionHelp" class="text-secondary">
+                                Avoid including private or sensitive information.
+                            </small>
+                            <small id="descriptionCount" class="text-secondary">0/2000</small>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="image" class="form-label fw-semibold">
+                            Evidence Photograph <span class="text-secondary">(Optional)</span>
+                        </label>
+
+                        <div class="border rounded-3 p-3 bg-light">
+                            <div class="d-flex align-items-center gap-3">
+                                <i class="bi bi-cloud-arrow-up fs-2 text-primary"></i>
+                                <div class="flex-grow-1">
+                                    <input type="file" id="image" name="image"
+                                           class="form-control"
+                                           accept=".jpg,.jpeg,.png,image/jpeg,image/png">
+                                    <div class="form-text">
+                                        Accepted formats: JPG, JPEG, PNG.
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="imageFeedback"
+                                 class="small mt-2 text-secondary"
+                                 aria-live="polite">
+                                You can submit the complaint without a photograph.
+                            </div>
+                            <img id="imagePreview" class="img-fluid rounded mt-3 d-none"
+                                 style="max-height: 250px; object-fit: contain;"
+                                 alt="Selected evidence preview">
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info border-0 small">
+                        <i class="bi bi-info-circle-fill me-2"></i>
+                        Please verify the details before submitting. Your
+                        complaint will be added to the grievance dashboard.
+                    </div>
+
+                    <div class="d-flex flex-column flex-sm-row gap-2">
+                        <button type="submit" class="btn btn-success btn-lg flex-grow-1">
+                            <i class="bi bi-send me-2"></i>Submit Grievance
+                        </button>
+                        <a href="{{ url_for('index') }}"
+                           class="btn btn-outline-secondary btn-lg">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <p class="text-center text-secondary small mt-3">
+            <i class="bi bi-shield-check me-1"></i>
+            Please submit accurate information to help civic authorities
+            understand the reported issue.
+        </p>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const form = document.getElementById("grievanceForm");
+    const title = document.getElementById("title");
+    const description = document.getElementById("description");
+    const titleCount = document.getElementById("titleCount");
+    const descriptionCount = document.getElementById("descriptionCount");
+    const imageInput = document.getElementById("image");
+    const imageFeedback = document.getElementById("imageFeedback");
+    const imagePreview = document.getElementById("imagePreview");
+
+    function updateCount(input, output, max) {
+        output.textContent = input.value.length + "/" + max;
+    }
+
+    title.addEventListener("input", function () {
+        updateCount(title, titleCount, 100);
+    });
+
+    description.addEventListener("input", function () {
+        updateCount(description, descriptionCount, 2000);
+    });
+
+    imageInput.addEventListener("change", function () {
+        const file = imageInput.files[0];
+
+        imagePreview.classList.add("d-none");
+        imagePreview.removeAttribute("src");
+
+        if (!file) {
+            imageFeedback.textContent =
+                "You can submit the complaint without a photograph.";
+            return;
+        }
+
+        const allowedTypes = ["image/jpeg", "image/png"];
+        if (!allowedTypes.includes(file.type)) {
+            imageInput.value = "";
+            imageFeedback.textContent =
+                "Please choose a JPG, JPEG, or PNG image.";
+            return;
+        }
+
+        imageFeedback.textContent =
+            "Selected: " + file.name +
+            " (" + (file.size / 1024).toFixed(1) + " KB)";
+
+        const reader = new FileReader();
+        reader.onload = function (event) {
+            imagePreview.src = event.target.result;
+            imagePreview.classList.remove("d-none");
+        };
+        reader.readAsDataURL(file);
+    });
+
+    form.addEventListener("submit", function (event) {
+        if (!form.checkValidity()) {
+            event.preventDefault();
+            form.reportValidity();
+            return;
+        }
+
+        if (!window.confirm(
+            "Submit this grievance? Please make sure the details are correct."
+        )) {
+            event.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}
